@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeu du pendu de Yassine</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #1e293b;
+    color: white;
+    min-height: 100vh;
+  }
+
+  h1 { color: #fbbf24; text-align: center; padding: 20px; }
+
+  /* CHOIX MODE */
+  #choix-mode {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+  }
+  #choix-mode h2 { color: #fbbf24; margin-bottom: 20px; }
+  .btn-mode {
+    padding: 12px 30px;
+    font-size: 18px;
+    margin: 8px;
+    border: none;
+    border-radius: 8px;
+    background: #fbbf24;
+    color: #1e293b;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  /* ROULETTE */
+  #roulette {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    min-height: 60vh;
+  }
+  #roulette h2 { color: #fbbf24; margin-bottom: 20px; font-size: 1.5rem; }
+  #pointeur {
+    width: 0; height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 28px solid #fbbf24;
+    margin-bottom: -4px;
+    z-index: 10;
+    filter: drop-shadow(0 0 6px #fbbf24);
+  }
+  #roue { display: block; }
+  #theme-annonce {
+    margin-top: 24px;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #fbbf24;
+    text-shadow: 0 0 20px rgba(251,191,36,0.7);
+    min-height: 60px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  /* SETUP DUO */
+  .setup-ecran {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+    text-align: center;
+    background: #0f172a;
+    min-height: 60vh;
+    border-radius: 16px;
+    margin: 20px;
+  }
+  .btn-retour {
+    align-self: flex-start;
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    background: #475569;
+    color: white;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  .btn-ok {
+    padding: 10px 15px;
+    font-size: 16px;
+    margin-left: 8px;
+    border: none;
+    border-radius: 8px;
+    background: #4a8c5c;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-aleatoire {
+    padding: 12px 25px;
+    font-size: 16px;
+    margin: 8px;
+    border: none;
+    border-radius: 8px;
+    background: #fbbf24;
+    color: #1e293b;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  /* JEU SOLO */
+  #jeu-solo {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  #theme-solo {
+    font-size: 1.2rem;
+    color: #fbbf24;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  #dessin-solo { background: #0f172a; border-radius: 10px; padding: 10px; }
+  #mot-solo { font-size: 40px; letter-spacing: 10px; margin: 20px 0; font-family: monospace; }
+  #clavier-solo { display: flex; flex-wrap: wrap; justify-content: center; max-width: 500px; gap: 6px; margin-top: 10px; }
+  #clavier-solo button { width: 40px; height: 40px; font-size: 18px; font-weight: bold; border: none; border-radius: 6px; background: #334155; color: white; cursor: pointer; }
+  #clavier-solo button:hover:not(:disabled) { background: #475569; }
+  #clavier-solo button:disabled { opacity: 0.3; cursor: not-allowed; }
+  #clavier-solo button.bonne { background: #16a34a; }
+  #clavier-solo button.mauvaise { background: #dc2626; }
+  #message-solo { font-size: 18px; margin-top: 20px; font-weight: bold; text-align: center; max-width: 500px; line-height: 1.5; }
+
+  /* JEU DUO */
+  #jeu-duo {
+    display: none;
+    flex-direction: row;
+    width: 100%;
+    min-height: 90vh;
+  }
+  .cote {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 10px;
+    transition: background 0.4s;
+    background: #1e293b;
+    opacity: 0.5;
+  }
+  .cote.actif { background: #1e3a5f; box-shadow: inset 0 0 60px rgba(251,191,36,0.2); opacity: 1; }
+  .cote h2 { color: #fbbf24; font-size: 1.4rem; margin-bottom: 6px; }
+  .cote .theme-label { color: #94a3b8; font-size: 0.9rem; margin-bottom: 8px; }
+  #separateur { width: 8px; background: #000; }
+  .dessin { background: #0f172a; border-radius: 10px; padding: 8px; }
+  .mot { font-size: 22px; letter-spacing: 8px; margin: 12px 0; font-family: monospace; }
+  .clavier { display: flex; flex-wrap: wrap; justify-content: center; max-width: 300px; gap: 4px; margin-top: 8px; }
+  .clavier button { width: 32px; height: 32px; font-size: 13px; font-weight: bold; border: none; border-radius: 6px; background: #334155; color: white; cursor: pointer; }
+  .clavier button:hover:not(:disabled) { background: #475569; }
+  .clavier button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .clavier button.bonne { background: #16a34a; }
+  .clavier button.mauvaise { background: #dc2626; }
+  .score { color: #fbbf24; font-weight: bold; margin-top: 6px; font-size: 0.95rem; }
+  .erreurs { color: #dc2626; font-size: 0.85rem; margin-top: 3px; }
+  .message-joueur { font-size: 0.85rem; font-weight: bold; margin-top: 6px; min-height: 20px; text-align: center; max-width: 260px; line-height: 1.4; }
+
+  #rejouer {
+    display: none;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background: #fbbf24;
+    color: #1e293b;
+    font-weight: bold;
+    cursor: pointer;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+  }
+  </style>
+</head>
+<body>
+
+<h1>Pendu</h1>
+
+<button id="btn-accueil" onclick="retourAccueil()" style="display:none; position:fixed; top:10px; left:10px; z-index:200; padding:8px 16px; border:none; border-radius:8px; background:#475569; color:white; font-weight:bold; cursor:pointer;">← Accueil</button>
+
+<!-- CHOIX MODE -->
+<div id="choix-mode">
+  <h2>Mode de jeu</h2>
+  <button class="btn-mode" onclick="choisirMode(1)">1 Joueur</button>
+  <button class="btn-mode" onclick="choisirMode(2)">2 Joueurs</button>
+</div>
+
+<!-- ROULETTE -->
+<div id="roulette">
+  <h2>La roue tourne...</h2>
+  <div id="pointeur"></div>
+  <canvas id="roue" width="320" height="320"></canvas>
+  <div id="theme-annonce"></div>
+</div>
+
+<!-- JEU SOLO -->
+<div id="jeu-solo">
+  <div id="theme-solo"></div>
+  <svg id="dessin-solo" width="200" height="220" viewBox="0 0 200 220">
+    <line x1="20" y1="210" x2="120" y2="210" stroke="white" stroke-width="4"/>
+    <line x1="50" y1="210" x2="50" y2="20" stroke="white" stroke-width="4"/>
+    <line x1="50" y1="20" x2="130" y2="20" stroke="white" stroke-width="4"/>
+    <line x1="130" y1="20" x2="130" y2="40" stroke="white" stroke-width="4"/>
+    <circle id="s-tete" cx="130" cy="55" r="15" stroke="white" stroke-width="3" fill="none" visibility="hidden"/>
+    <line id="s-corps" x1="130" y1="70" x2="130" y2="120" stroke="white" stroke-width="3" visibility="hidden"/>
+    <line id="s-brasG" x1="130" y1="80" x2="105" y2="105" stroke="white" stroke-width="3" visibility="hidden"/>
+    <line id="s-brasD" x1="130" y1="80" x2="155" y2="105" stroke="white" stroke-width="3" visibility="hidden"/>
+    <line id="s-jambeG" x1="130" y1="120" x2="105" y2="155" stroke="white" stroke-width="3" visibility="hidden"/>
+    <line id="s-jambeD" x1="130" y1="120" x2="155" y2="155" stroke="white" stroke-width="3" visibility="hidden"/>
+  </svg>
+  <div id="mot-solo"></div>
+  <div id="clavier-solo"></div>
+  <div id="message-solo"></div>
+</div>
+
+<!-- JEU DUO -->
+<div id="jeu-duo">
+  <div class="cote actif" id="cote-j1">
+    <h2>Joueur 1</h2>
+    <div id="theme-j1" class="theme-label"></div>
+    <svg class="dessin" width="140" height="155" viewBox="0 0 200 220">
+      <line x1="20" y1="210" x2="120" y2="210" stroke="white" stroke-width="4"/>
+      <line x1="50" y1="210" x2="50" y2="20" stroke="white" stroke-width="4"/>
+      <line x1="50" y1="20" x2="130" y2="20" stroke="white" stroke-width="4"/>
+      <line x1="130" y1="20" x2="130" y2="40" stroke="white" stroke-width="4"/>
+      <circle id="j1-tete" cx="130" cy="55" r="15" stroke="white" stroke-width="3" fill="none" visibility="hidden"/>
+      <line id="j1-corps" x1="130" y1="70" x2="130" y2="120" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j1-brasG" x1="130" y1="80" x2="105" y2="105" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j1-brasD" x1="130" y1="80" x2="155" y2="105" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j1-jambeG" x1="130" y1="120" x2="105" y2="155" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j1-jambeD" x1="130" y1="120" x2="155" y2="155" stroke="white" stroke-width="3" visibility="hidden"/>
+    </svg>
+    <div id="mot-j1" class="mot"></div>
+    <div id="clavier-j1" class="clavier"></div>
+    <div id="score-j1" class="score">Score: 0</div>
+    <div id="erreurs-j1" class="erreurs">Erreurs: 0/6</div>
+    <div id="message-j1" class="message-joueur"></div>
+  </div>
+  <div id="separateur"></div>
+  <div class="cote" id="cote-j2">
+    <h2>Joueur 2</h2>
+    <div id="theme-j2" class="theme-label"></div>
+    <svg class="dessin" width="140" height="155" viewBox="0 0 200 220">
+      <line x1="20" y1="210" x2="120" y2="210" stroke="white" stroke-width="4"/>
+      <line x1="50" y1="210" x2="50" y2="20" stroke="white" stroke-width="4"/>
+      <line x1="50" y1="20" x2="130" y2="20" stroke="white" stroke-width="4"/>
+      <line x1="130" y1="20" x2="130" y2="40" stroke="white" stroke-width="4"/>
+      <circle id="j2-tete" cx="130" cy="55" r="15" stroke="white" stroke-width="3" fill="none" visibility="hidden"/>
+      <line id="j2-corps" x1="130" y1="70" x2="130" y2="120" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j2-brasG" x1="130" y1="80" x2="105" y2="105" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j2-brasD" x1="130" y1="80" x2="155" y2="105" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j2-jambeG" x1="130" y1="120" x2="105" y2="155" stroke="white" stroke-width="3" visibility="hidden"/>
+      <line id="j2-jambeD" x1="130" y1="120" x2="155" y2="155" stroke="white" stroke-width="3" visibility="hidden"/>
+    </svg>
+    <div id="mot-j2" class="mot"></div>
+    <div id="clavier-j2" class="clavier"></div>
+    <div id="score-j2" class="score">Score: 0</div>
+    <div id="erreurs-j2" class="erreurs">Erreurs: 0/6</div>
+    <div id="message-j2" class="message-joueur"></div>
+  </div>
+</div>
+
+<button id="rejouer">🔄 Rejouer</button>
+
+<script>
+const THEMES = {
+  "🍕 Cuisine":     { mots: ["CASSEROLE","SPATULE","FARINE","BEURRE","OMELETTE","RECETTE","POIVRON","COURGETTE","VINAIGRETTE","FRICASSEE","MARINADE","RATATOUILLE","MADELEINE","CROISSANT","BAGUETTE","SOUFFLÉ","GASPACHO","FONDUE"], },
+  "🏠 Maison":      { mots: ["FENETRE","ESCALIER","BALCON","PLACARD","LUSTRE","PARQUET","RADIATEUR","CHEMINEE","VERANDA","ROBINET","COULOIR","GRENIER","VOLET","PORTAIL","BIBLIOTHEQUE","BAIGNOIRE","CARRELAGE"], },
+  "🐾 Animaux":     { mots: ["GIRAFE","RHINOCEROS","HIPPOPOTAME","CROCODILE","PINGOUIN","PERROQUET","CHAMELEON","ECUREUIL","LOUTRE","BELETTE","TAMANOIR","TATOU","AXOLOTL","PANGOLIN","FLAMANT","ORNITHORYNQUE"], },
+  "🌿 Nature":      { mots: ["MONTAGNE","VOLCAN","GLACIER","SAVANE","MANGROVE","TOURBIERE","STALACTITE","STALAGMITE","ESTUAIRE","FJORD","ATOLL","TOUNDRA","CALANQUE","RIVIERE","DELTAFLUVIAL"], },
+  "⚽ Sports":      { mots: ["BASKETBALL","NATATION","ESCRIME","TRIATHLON","PENTATHLON","MARATHON","VOLLEYBALL","HANDBALL","CYCLISME","PATINAGE","LUGE","SKELETON","BIATHLON","EQUITATION","JUDO","KARATE"], },
+  "🎨 Arts":        { mots: ["SCULPTURE","AQUARELLE","SYMPHONIE","LITHOGRAPHIE","PERSPECTIVE","CALLIGRAPHIE","CHORÉGRAPHIE","HARMONIE","VIRTUOSE","SONATE","ALLEGORIE","PASTEL","FRESQUE","GRAVURE","MOSAIQUE"], },
+  "🔬 Sciences":    { mots: ["PHOTOSYNTHESE","METAMORPHOSE","GRAVITATION","CHROMOSOME","TELESCOPE","MICROSCOPE","ELECTRICITE","THERMOMETRE","MAGNETISME","ATMOSPHERE","OXYGENE","MOLECULE","NOYAU","PROTON","NEUTRON"], },
+  "🌍 Géographie":  { mots: ["HIMALAYA","AMAZONIE","SAHARA","MEDITERRANEE","CALIFORNIE","PATAGONIE","MADAGASCAR","CAMBODGE","MOZAMBIQUE","AZERBAIDJAN","OUZBÉKISTAN","GROENLAND","ISLANDE","BORNEO","SUMATRA"], },
+  "🎭 Culture":     { mots: ["PHILOSOPHIE","DEMOCRATIE","RENAISSANCE","REVOLUTION","ENCYCLOPEDIE","MONARCHIE","REPUBLIQUE","ARISTOCRATIE","LAICITE","PATRIMOINE","CIVILISATION","MYTHOLOGIE","LEGENDAIRE","FOLKLORE"], },
+  "💻 Technologie": { mots: ["ALGORITHME","JAVASCRIPT","ORDINATEUR","PROGRAMMATION","PROCESSEUR","INTELLIGENCE","NUMERIQUE","CRYPTOGRAPHIE","RESEAU","LOGICIEL","INTERFACE","PROTOCOLE","SERVEUR","NAVIGATEUR"], },
+};
+
+const DEFINITIONS = {
+  "CASSEROLE":"Récipient de cuisine à manche pour faire cuire les aliments.",
+  "SPATULE":"Ustensile de cuisine plat servant à mélanger ou retourner les aliments.",
+  "FARINE":"Poudre obtenue en broyant des céréales, utilisée en cuisine.",
+  "BEURRE":"Matière grasse alimentaire obtenue en barattant de la crème de lait.",
+  "OMELETTE":"Plat à base d'œufs battus et cuits dans une poêle.",
+  "RECETTE":"Instructions détaillées pour préparer un plat culinaire.",
+  "POIVRON":"Légume coloré en forme de cloche, doux ou légèrement piquant.",
+  "COURGETTE":"Légume allongé vert à chair blanche, cuit à la poêle ou au four.",
+  "VINAIGRETTE":"Sauce à base de vinaigre et d'huile pour assaisonner les salades.",
+  "FRICASSEE":"Ragoût de viande blanche cuite dans une sauce crémeuse.",
+  "MARINADE":"Mélange liquide dans lequel on fait tremper un aliment pour l'aromatiser.",
+  "RATATOUILLE":"Plat provençal de légumes mijotés, typique du sud de la France.",
+  "MADELEINE":"Petit gâteau en forme de coquille, célèbre grâce à Proust.",
+  "CROISSANT":"Viennoiserie en forme de croissant, symbole de la boulangerie française.",
+  "BAGUETTE":"Pain long et croustillant, symbole de la gastronomie française.",
+  "FONDUE":"Plat convivial où l'on trempe des aliments dans du fromage ou du chocolat fondu.",
+  "GASPACHO":"Soupe froide espagnole à base de tomates et légumes mixés.",
+  "FENETRE":"Ouverture vitrée dans un mur pour laisser entrer la lumière.",
+  "ESCALIER":"Suite de marches permettant de monter ou descendre d'un étage.",
+  "BALCON":"Petite terrasse en saillie sur la façade d'un bâtiment.",
+  "PLACARD":"Meuble encastré dans le mur servant de rangement.",
+  "LUSTRE":"Appareil d'éclairage suspendu au plafond avec plusieurs ampoules.",
+  "PARQUET":"Revêtement de sol en bois composé de lames assemblées.",
+  "RADIATEUR":"Appareil de chauffage qui diffuse de la chaleur dans une pièce.",
+  "CHEMINEE":"Foyer dans lequel on fait du feu pour chauffer une pièce.",
+  "VERANDA":"Galerie vitrée accolée à une maison servant de pièce supplémentaire.",
+  "ROBINET":"Dispositif permettant d'ouvrir ou fermer le passage de l'eau.",
+  "COULOIR":"Passage étroit reliant les pièces d'un bâtiment.",
+  "GRENIER":"Espace sous le toit d'une maison servant de rangement.",
+  "VOLET":"Panneau mobile servant à occulter une fenêtre.",
+  "PORTAIL":"Grande porte donnant accès à une propriété.",
+  "BIBLIOTHEQUE":"Meuble ou pièce servant à ranger et conserver des livres.",
+  "BAIGNOIRE":"Grand récipient fixe dans lequel on se baigne.",
+  "CARRELAGE":"Revêtement de sol ou de mur en carreaux de céramique.",
+  "GIRAFE":"Grand mammifère africain au cou très long.",
+  "RHINOCEROS":"Grand mammifère à une ou deux cornes sur le museau.",
+  "HIPPOPOTAME":"Grand mammifère africain amphibie vivant près des fleuves.",
+  "CROCODILE":"Grand reptile aux mâchoires puissantes vivant près des eaux.",
+  "PINGOUIN":"Oiseau marin des régions froides incapable de voler.",
+  "PERROQUET":"Oiseau tropical coloré capable d'imiter la parole humaine.",
+  "CHAMELEON":"Lézard capable de changer de couleur pour se camoufler.",
+  "ECUREUIL":"Petit rongeur roux qui grimpe aux arbres et mange des noisettes.",
+  "LOUTRE":"Mammifère semi-aquatique joueur qui vit près des rivières.",
+  "BELETTE":"Petit carnivore agile et élancé, le plus petit mustélidé.",
+  "TAMANOIR":"Grand mammifère sans dents qui mange les fourmis avec sa longue langue.",
+  "TATOU":"Mammifère d'Amérique recouvert d'une carapace articulée.",
+  "AXOLOTL":"Amphibien mexicain qui garde ses branchies toute sa vie.",
+  "PANGOLIN":"Mammifère recouvert d'écailles qui se roule en boule pour se défendre.",
+  "FLAMANT":"Grand oiseau rose qui se tient souvent sur une seule patte.",
+  "ORNITHORYNQUE":"Mammifère australien avec un bec de canard qui pond des œufs.",
+  "MONTAGNE":"Relief très élevé du terrain, parfois enneigé au sommet.",
+  "VOLCAN":"Montagne dont le sommet crache de la lave et des cendres.",
+  "GLACIER":"Masse de glace se déplaçant lentement sur les montagnes.",
+  "SAVANE":"Vaste étendue herbeuse tropicale avec peu d'arbres.",
+  "MANGROVE":"Forêt tropicale qui pousse dans les zones côtières inondées.",
+  "TOURBIERE":"Zone humide où s'accumule de la tourbe sur des milliers d'années.",
+  "STALACTITE":"Formation calcaire qui pend du plafond d'une grotte.",
+  "STALAGMITE":"Formation calcaire qui monte du sol d'une grotte.",
+  "ESTUAIRE":"Embouchure d'un fleuve où l'eau douce rencontre l'eau de mer.",
+  "FJORD":"Bras de mer étroit et profond creusé par un glacier.",
+  "ATOLL":"Île coralienne en forme d'anneau entourant un lagon.",
+  "TOUNDRA":"Vaste plaine froide et sans arbres des régions arctiques.",
+  "CALANQUE":"Crique rocheuse étroite sur les côtes méditerranéennes.",
+  "RIVIERE":"Cours d'eau naturel qui se jette dans un fleuve.",
+  "BASKETBALL":"Sport d'équipe où l'on marque des points en lançant un ballon dans un panier.",
+  "NATATION":"Sport qui consiste à se déplacer dans l'eau par des mouvements du corps.",
+  "ESCRIME":"Sport de combat avec des armes blanches comme le fleuret ou le sabre.",
+  "TRIATHLON":"Compétition enchaînant natation, cyclisme et course à pied.",
+  "PENTATHLON":"Épreuve sportive combinant cinq disciplines différentes.",
+  "MARATHON":"Course à pied de 42,195 km, épreuve emblématique des Jeux olympiques.",
+  "VOLLEYBALL":"Sport d'équipe où l'on frappe un ballon par-dessus un filet.",
+  "HANDBALL":"Sport d'équipe où l'on lance un ballon à la main dans un but.",
+  "CYCLISME":"Sport qui consiste à se déplacer à vélo sur route ou piste.",
+  "PATINAGE":"Sport pratiqué sur glace ou sur roulettes avec des patins.",
+  "LUGE":"Sport d'hiver où l'on descend une piste sur un traîneau à dos.",
+  "SKELETON":"Sport d'hiver où l'on descend une piste tête la première sur un plateau.",
+  "BIATHLON":"Sport d'hiver combinant le ski de fond et le tir à la carabine.",
+  "EQUITATION":"Art de monter à cheval et de le diriger.",
+  "JUDO":"Art martial japonais basé sur les projections et les immobilisations.",
+  "KARATE":"Art martial japonais basé sur les coups de poing et de pied.",
+  "SCULPTURE":"Art de créer des formes en trois dimensions dans de la pierre, du bois ou de l'argile.",
+  "AQUARELLE":"Technique de peinture utilisant des pigments dilués dans l'eau.",
+  "SYMPHONIE":"Grande composition musicale pour orchestre en plusieurs mouvements.",
+  "LITHOGRAPHIE":"Technique d'impression à partir d'une surface en pierre calcaire.",
+  "PERSPECTIVE":"Technique artistique représentant la profondeur sur une surface plane.",
+  "CALLIGRAPHIE":"Art de former des lettres avec un style élégant et régulier.",
+  "HARMONIE":"Combinaison agréable de sons, de couleurs ou d'éléments.",
+  "VIRTUOSE":"Musicien ou artiste d'une habileté technique exceptionnelle.",
+  "SONATE":"Composition musicale pour un ou deux instruments en plusieurs mouvements.",
+  "ALLEGORIE":"Représentation d'une idée abstraite par une figure concrète.",
+  "PASTEL":"Bâton de couleur utilisé pour dessiner, ou couleur douce et pâle.",
+  "FRESQUE":"Peinture murale réalisée sur du plâtre encore frais.",
+  "GRAVURE":"Art de tailler un dessin sur une surface pour l'imprimer.",
+  "MOSAIQUE":"Assemblage de petits morceaux colorés formant une image.",
+  "PHOTOSYNTHESE":"Processus par lequel les plantes fabriquent leur nourriture grâce au soleil.",
+  "METAMORPHOSE":"Transformation complète d'un être vivant, comme la chenille en papillon.",
+  "GRAVITATION":"Force d'attraction exercée entre tous les corps ayant une masse.",
+  "CHROMOSOME":"Structure dans le noyau des cellules portant les gènes.",
+  "TELESCOPE":"Instrument optique permettant d'observer les objets lointains dans l'espace.",
+  "MICROSCOPE":"Instrument permettant d'observer des objets trop petits pour l'œil nu.",
+  "ELECTRICITE":"Phénomène physique lié aux charges électriques en mouvement.",
+  "THERMOMETRE":"Instrument servant à mesurer la température.",
+  "MAGNETISME":"Propriété de certains matériaux d'attirer le fer et d'autres métaux.",
+  "ATMOSPHERE":"Couche de gaz entourant la Terre et protégeant la vie.",
+  "OXYGENE":"Gaz incolore indispensable à la respiration des êtres vivants.",
+  "MOLECULE":"Plus petite unité d'une substance chimique conservant ses propriétés.",
+  "NOYAU":"Partie centrale d'un atome ou d'une cellule.",
+  "PROTON":"Particule élémentaire positive présente dans le noyau atomique.",
+  "NEUTRON":"Particule électriquement neutre présente dans le noyau atomique.",
+  "HIMALAYA":"La plus haute chaîne de montagnes du monde, en Asie.",
+  "AMAZONIE":"Vaste région tropicale d'Amérique du Sud abritant la plus grande forêt du monde.",
+  "SAHARA":"Le plus grand désert chaud du monde, en Afrique du Nord.",
+  "MEDITERRANEE":"Mer intérieure entourée par l'Europe, l'Afrique et l'Asie.",
+  "CALIFORNIE":"État américain connu pour Hollywood, Silicon Valley et ses plages.",
+  "PATAGONIE":"Région sauvage au sud de l'Argentine et du Chili.",
+  "MADAGASCAR":"Grande île africaine connue pour ses animaux uniques comme les lémuriens.",
+  "CAMBODGE":"Pays d'Asie du Sud-Est célèbre pour les temples d'Angkor Vat.",
+  "MOZAMBIQUE":"Pays côtier d'Afrique de l'Est bordant l'océan Indien.",
+  "GROENLAND":"La plus grande île du monde, couverte à 80% de glace.",
+  "ISLANDE":"Île nordique connue pour ses geysers, ses volcans et ses aurores boréales.",
+  "BORNEO":"Troisième plus grande île du monde, partagée entre trois pays.",
+  "PHILOSOPHIE":"Discipline qui s'interroge sur le sens de l'existence et de la connaissance.",
+  "DEMOCRATIE":"Système politique dans lequel le peuple exerce le pouvoir.",
+  "RENAISSANCE":"Mouvement culturel et artistique européen des XVe et XVIe siècles.",
+  "REVOLUTION":"Renversement brutal et profond d'un régime politique ou social.",
+  "ENCYCLOPEDIE":"Ouvrage qui rassemble et organise l'ensemble des connaissances humaines.",
+  "MONARCHIE":"Système politique gouverné par un roi ou une reine.",
+  "REPUBLIQUE":"Système politique où le pouvoir appartient au peuple et à ses représentants.",
+  "ARISTOCRATIE":"Classe sociale de personnes issues de familles nobles et privilégiées.",
+  "LAICITE":"Principe de séparation de la religion et de l'État.",
+  "PATRIMOINE":"Ensemble des biens culturels, historiques ou naturels transmis par les générations.",
+  "CIVILISATION":"Ensemble des caractères propres à la vie culturelle et sociale d'un peuple.",
+  "MYTHOLOGIE":"Ensemble des mythes et légendes d'une culture ou d'une religion.",
+  "ALGORITHME":"Suite d'instructions précises permettant de résoudre un problème.",
+  "JAVASCRIPT":"Langage de programmation utilisé pour rendre les sites web interactifs.",
+  "ORDINATEUR":"Machine électronique capable de traiter et stocker des informations.",
+  "PROGRAMMATION":"Activité consistant à écrire des instructions pour un ordinateur.",
+  "PROCESSEUR":"Composant électronique qui exécute les calculs d'un ordinateur.",
+  "INTELLIGENCE":"Capacité à comprendre, apprendre et s'adapter à de nouvelles situations.",
+  "NUMERIQUE":"Relatif aux technologies utilisant des données sous forme de nombres binaires.",
+  "CRYPTOGRAPHIE":"Science de la protection des informations par des codes secrets.",
+  "RESEAU":"Ensemble d'appareils connectés entre eux pour communiquer.",
+  "LOGICIEL":"Programme informatique permettant d'effectuer des tâches sur un ordinateur.",
+  "INTERFACE":"Surface de contact et d'échange entre l'utilisateur et un système informatique.",
+  "PROTOCOLE":"Ensemble de règles définissant les échanges dans un réseau informatique.",
+  "SERVEUR":"Ordinateur puissant qui fournit des services à d'autres ordinateurs.",
+  "NAVIGATEUR":"Logiciel permettant de consulter des pages sur Internet.",
+};
+
+const NOMS_THEMES = Object.keys(THEMES);
+const COULEURS = ['#e74c3c','#e67e22','#f39c12','#27ae60','#16a085','#2980b9','#8e44ad','#c0392b','#d35400','#1abc9c'];
+
+function dessinerRoue(angle) {
+  const canvas = $("roue");
+  const ctx = canvas.getContext("2d");
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r = cx - 6;
+  const n = NOMS_THEMES.length;
+  const arc = (2 * Math.PI) / n;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  NOMS_THEMES.forEach(function(theme, i) {
+    var startA = angle + i * arc;
+    var endA = startA + arc;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startA, endA);
+    ctx.closePath();
+    ctx.fillStyle = COULEURS[i];
+    ctx.fill();
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(startA + arc / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "white";
+    ctx.font = "bold 12px Arial";
+    ctx.shadowColor = "rgba(0,0,0,0.6)";
+    ctx.shadowBlur = 4;
+    ctx.fillText(theme, r - 10, 5);
+    ctx.restore();
+  });
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
+  ctx.fillStyle = "#1e293b";
+  ctx.fill();
+  ctx.strokeStyle = "#fbbf24";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+const ALPHABET = "AZERTYUIOPQSDFGHJKLMWXCVBN".split("");
+const PARTIES_SOLO = ["s-tete","s-corps","s-brasG","s-brasD","s-jambeG","s-jambeD"];
+const PARTIES_J1   = ["j1-tete","j1-corps","j1-brasG","j1-brasD","j1-jambeG","j1-jambeD"];
+const PARTIES_J2   = ["j2-tete","j2-corps","j2-brasG","j2-brasD","j2-jambeG","j2-jambeD"];
+const MAX_ERREURS  = 6;
+
+let mode = 1;
+let joueurActuel = 1;
+let themeChoisi = "";
+let motSolo = "", lettresSolo = [], erreursSolo = 0;
+let motJ1 = "", motJ2 = "", lettresJ1 = [], lettresJ2 = [];
+let erreursJ1 = 0, erreursJ2 = 0, scoreJ1 = 0, scoreJ2 = 0;
+let finiJ1 = false, finiJ2 = false;
+
+function $(id) { return document.getElementById(id); }
+
+function retourAccueil() {
+  ["jeu-solo","jeu-duo","roulette"].forEach(id => $(id).style.display = "none");
+  $("rejouer").style.display = "none";
+  $("btn-accueil").style.display = "none";
+  $("choix-mode").style.display = "flex";
+}
+
+function choisirMode(m) {
+  mode = m;
+  $("choix-mode").style.display = "none";
+  lancerRoulette();
+}
+
+function themeSousPointeur(angle) {
+  var arc = (2 * Math.PI) / NOMS_THEMES.length;
+  var pointeur = -Math.PI / 2;
+  var rel = pointeur - angle;
+  rel = ((rel % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.floor(rel / arc) % NOMS_THEMES.length;
+}
+
+function lancerRoulette() {
+  $("roulette").style.display = "flex";
+  $("btn-accueil").style.display = "block";
+  $("theme-annonce").textContent = "";
+
+  var spins = 6 + Math.random() * 3;
+  var finalAngle = -spins * 2 * Math.PI - Math.random() * 2 * Math.PI;
+  var startTime = null;
+  var duration = 4500;
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function animate(timestamp) {
+    if (!startTime) startTime = timestamp;
+    var elapsed = timestamp - startTime;
+    var progress = Math.min(elapsed / duration, 1);
+    var angle = finalAngle * easeOut(progress);
+    dessinerRoue(angle);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      var indexFinal = themeSousPointeur(finalAngle);
+      themeChoisi = NOMS_THEMES[indexFinal];
+      $("theme-annonce").textContent = themeChoisi;
+      setTimeout(function() {
+        $("roulette").style.display = "none";
+        if (mode === 1) {
+          $("jeu-solo").style.display = "flex";
+          nouvellePartie();
+        } else {
+          motJ1 = motDuTheme("");
+          motJ2 = motDuTheme(motJ1);
+          $("jeu-duo").style.display = "flex";
+          nouvellePartie();
+        }
+      }, 2000);
+    }
+  }
+
+  dessinerRoue(0);
+  requestAnimationFrame(animate);
+}
+
+function motDuTheme(exclure) {
+  const liste = THEMES[themeChoisi] ? THEMES[themeChoisi].mots : THEMES[NOMS_THEMES[0]].mots;
+  const filtres = liste.filter(m => m !== exclure);
+  return filtres[Math.floor(Math.random() * filtres.length)];
+}
+
+function definition(mot) {
+  return DEFINITIONS[mot] || "Aucune définition disponible.";
+}
+
+function nouvellePartie() {
+  $("rejouer").style.display = "none";
+
+  if (mode === 1) {
+    motSolo = motDuTheme("");
+    lettresSolo = [];
+    erreursSolo = 0;
+    PARTIES_SOLO.forEach(id => $(id).setAttribute("visibility","hidden"));
+    $("message-solo").textContent = "";
+    $("theme-solo").textContent = "Thème : " + themeChoisi;
+    $("clavier-solo").innerHTML = "";
+    ALPHABET.forEach(l => {
+      const b = document.createElement("button");
+      b.textContent = l; b.id = "s-" + l;
+      b.onclick = () => proposerLettreSolo(l);
+      $("clavier-solo").appendChild(b);
+    });
+    afficherMotSolo();
+
+  } else {
+    lettresJ1 = []; lettresJ2 = [];
+    erreursJ1 = 0; erreursJ2 = 0;
+    scoreJ1 = 0; scoreJ2 = 0;
+    finiJ1 = false; finiJ2 = false;
+    joueurActuel = 1;
+    PARTIES_J1.forEach(id => $(id).setAttribute("visibility","hidden"));
+    PARTIES_J2.forEach(id => $(id).setAttribute("visibility","hidden"));
+    $("score-j1").textContent = "Score: 0";
+    $("score-j2").textContent = "Score: 0";
+    $("erreurs-j1").textContent = "Erreurs: 0/6";
+    $("erreurs-j2").textContent = "Erreurs: 0/6";
+    $("message-j1").textContent = "";
+    $("message-j2").textContent = "";
+    $("theme-j1").textContent = "Thème : " + themeChoisi;
+    $("theme-j2").textContent = "Thème : " + themeChoisi;
+    $("cote-j1").classList.add("actif");
+    $("cote-j2").classList.remove("actif");
+
+    $("clavier-j1").innerHTML = "";
+    ALPHABET.forEach(l => {
+      const b = document.createElement("button");
+      b.textContent = l; b.id = "j1-" + l;
+      b.onclick = () => proposerLettreDuo(1, l);
+      $("clavier-j1").appendChild(b);
+    });
+    $("clavier-j2").innerHTML = "";
+    ALPHABET.forEach(l => {
+      const b = document.createElement("button");
+      b.textContent = l; b.id = "j2-" + l;
+      b.disabled = true;
+      b.onclick = () => proposerLettreDuo(2, l);
+      $("clavier-j2").appendChild(b);
+    });
+    afficherMotDuo();
+  }
+}
+
+function afficherMotSolo() {
+  $("mot-solo").textContent = [...motSolo].map(l => lettresSolo.includes(l) ? l : "_").join(" ");
+}
+
+function afficherMotDuo() {
+  $("mot-j1").textContent = [...motJ1].map(l => lettresJ1.includes(l) ? l : "_").join(" ");
+  $("mot-j2").textContent = [...motJ2].map(l => lettresJ2.includes(l) ? l : "_").join(" ");
+}
+
+function proposerLettreSolo(l) {
+  const b = $("s-" + l);
+  b.disabled = true;
+  if (motSolo.includes(l)) {
+    lettresSolo.push(l); b.classList.add("bonne");
+  } else {
+    $(PARTIES_SOLO[erreursSolo]).setAttribute("visibility","visible");
+    erreursSolo++; b.classList.add("mauvaise");
+  }
+  afficherMotSolo();
+  if ([...motSolo].every(l => lettresSolo.includes(l))) {
+    $("message-solo").innerHTML = "✅ Gagné ! Le mot était <b>" + motSolo + "</b><br><span style='font-size:0.85rem;color:#94a3b8;'>📖 " + definition(motSolo) + "</span>";
+    $("message-solo").style.color = "#16a34a";
+    ALPHABET.forEach(l => $("s-" + l).disabled = true);
+    $("rejouer").style.display = "block";
+  } else if (erreursSolo >= MAX_ERREURS) {
+    $("message-solo").innerHTML = "❌ Perdu ! Le mot était <b>" + motSolo + "</b><br><span style='font-size:0.85rem;color:#94a3b8;'>📖 " + definition(motSolo) + "</span>";
+    $("message-solo").style.color = "#dc2626";
+    ALPHABET.forEach(l => $("s-" + l).disabled = true);
+    $("rejouer").style.display = "block";
+  }
+}
+
+function proposerLettreDuo(joueur, l) {
+  if (joueur !== joueurActuel) return;
+  const b = $(joueur === 1 ? "j1-" + l : "j2-" + l);
+  b.disabled = true;
+
+  if (joueur === 1) {
+    if (motJ1.includes(l)) {
+      lettresJ1.push(l); b.classList.add("bonne");
+      scoreJ1 += [...motJ1].filter(c => c === l).length;
+      $("score-j1").textContent = "Score: " + scoreJ1;
+    } else {
+      $(PARTIES_J1[erreursJ1]).setAttribute("visibility","visible");
+      erreursJ1++; b.classList.add("mauvaise");
+      $("erreurs-j1").textContent = "Erreurs: " + erreursJ1 + "/6";
+      changerTour();
+    }
+    if ([...motJ1].every(c => lettresJ1.includes(c))) {
+      $("message-j1").innerHTML = "✅ Mot trouvé !<br><span style='font-size:0.75rem;color:#94a3b8;'>📖 " + definition(motJ1) + "</span>";
+      $("message-j1").style.color = "#16a34a";
+      finiJ1 = true; ALPHABET.forEach(l => $("j1-" + l).disabled = true); changerTour();
+    } else if (erreursJ1 >= MAX_ERREURS) {
+      $("message-j1").innerHTML = "❌ <b>" + motJ1 + "</b><br><span style='font-size:0.75rem;color:#94a3b8;'>📖 " + definition(motJ1) + "</span>";
+      $("message-j1").style.color = "#dc2626";
+      finiJ1 = true; ALPHABET.forEach(l => $("j1-" + l).disabled = true); changerTour();
+    }
+  } else {
+    if (motJ2.includes(l)) {
+      lettresJ2.push(l); b.classList.add("bonne");
+      scoreJ2 += [...motJ2].filter(c => c === l).length;
+      $("score-j2").textContent = "Score: " + scoreJ2;
+    } else {
+      $(PARTIES_J2[erreursJ2]).setAttribute("visibility","visible");
+      erreursJ2++; b.classList.add("mauvaise");
+      $("erreurs-j2").textContent = "Erreurs: " + erreursJ2 + "/6";
+      changerTour();
+    }
+    if ([...motJ2].every(c => lettresJ2.includes(c))) {
+      $("message-j2").innerHTML = "✅ Mot trouvé !<br><span style='font-size:0.75rem;color:#94a3b8;'>📖 " + definition(motJ2) + "</span>";
+      $("message-j2").style.color = "#16a34a";
+      finiJ2 = true; ALPHABET.forEach(l => $("j2-" + l).disabled = true); changerTour();
+    } else if (erreursJ2 >= MAX_ERREURS) {
+      $("message-j2").innerHTML = "❌ <b>" + motJ2 + "</b><br><span style='font-size:0.75rem;color:#94a3b8;'>📖 " + definition(motJ2) + "</span>";
+      $("message-j2").style.color = "#dc2626";
+      finiJ2 = true; ALPHABET.forEach(l => $("j2-" + l).disabled = true); changerTour();
+    }
+  }
+
+  afficherMotDuo();
+  if (finiJ1 && finiJ2) $("rejouer").style.display = "block";
+}
+
+function changerTour() {
+  if (finiJ1 && finiJ2) return;
+  if (finiJ1) joueurActuel = 2;
+  else if (finiJ2) joueurActuel = 1;
+  else joueurActuel = joueurActuel === 1 ? 2 : 1;
+
+  $("cote-j1").classList.toggle("actif", joueurActuel === 1);
+  $("cote-j2").classList.toggle("actif", joueurActuel === 2);
+
+  ALPHABET.forEach(l => {
+    const b1 = $("j1-" + l), b2 = $("j2-" + l);
+    if (!b1.classList.contains("bonne") && !b1.classList.contains("mauvaise")) b1.disabled = joueurActuel !== 1;
+    if (!b2.classList.contains("bonne") && !b2.classList.contains("mauvaise")) b2.disabled = joueurActuel !== 2;
+  });
+}
+
+$("rejouer").onclick = function() {
+  $("rejouer").style.display = "none";
+  if (mode === 1) {
+    $("jeu-solo").style.display = "none";
+  } else {
+    $("jeu-duo").style.display = "none";
+  }
+  lancerRoulette();
+ };
+</script>
+</body>
+</html>
